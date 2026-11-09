@@ -91,7 +91,68 @@ PRAGMA foreign_key_list('aprovacoes');
 
 Na saída, `from` é a coluna de origem e `table` e `to` identificam a tabela e a coluna de destino. Se o acesso estiver limitado a telas, relatórios ou views que ocultam as restrições, marque as relações como inferidas e confirme-as com o dicionário de dados.
 
-## Resultados de referência
+## Testes de auditoria e reconciliação
+
+### 1. Conferir a população
+
+Conte as alterações acima de R$ 500,00 em fretes pagos antes de consultar as aprovações. O resultado esperado é **5.456 alterações**.
+
+```sql
+SELECT COUNT(*) AS total_no_escopo
+FROM alteracoes_frete AS a
+JOIN fretes AS f ON f.id = a.frete_id
+WHERE f.status = 'PAGO'
+  AND a.valor_novo_centavos - a.valor_anterior_centavos > 50000;
+```
+
+### 2. Classificar as alterações
+
+O `LEFT JOIN` preserva alterações sem aprovação. O `CASE` usa a primeira condição atendida, na ordem de ausência de aprovação, autoaprovação e aprovação fora da ordem exigida. Assim, cada alteração entra em apenas uma categoria.
+
+```sql
+WITH classificadas AS (
+    SELECT
+        a.id AS alteracao_id,
+        f.id AS frete_id,
+        a.valor_novo_centavos - a.valor_anterior_centavos AS aumento_centavos,
+        a.alterado_por,
+        ap.aprovado_por,
+        a.alterado_em,
+        ap.aprovado_em,
+        f.pago_em,
+        CASE
+            WHEN ap.alteracao_id IS NULL
+                THEN 'Sem aprovação registrada'
+            WHEN ap.aprovado_por = a.alterado_por
+                THEN 'Autoaprovação'
+            WHEN ap.aprovado_em <= a.alterado_em
+              OR ap.aprovado_em >= f.pago_em
+                THEN 'Aprovação fora da ordem exigida'
+            ELSE 'Conforme'
+        END AS classificacao
+    FROM alteracoes_frete AS a
+    JOIN fretes AS f ON f.id = a.frete_id
+    LEFT JOIN aprovacoes AS ap ON ap.alteracao_id = a.id
+    WHERE f.status = 'PAGO'
+      AND a.valor_novo_centavos - a.valor_anterior_centavos > 50000
+)
+SELECT *
+FROM classificadas
+ORDER BY alteracao_id;
+```
+
+### 3. Reconciliar as contagens
+
+Mantenha o bloco `WITH classificadas AS (...)` e substitua o `SELECT` final pelo trecho abaixo. No DBeaver, execute o bloco completo como uma única instrução.
+
+```sql
+SELECT
+    classificacao,
+    COUNT(*) AS total_alteracoes
+FROM classificadas
+GROUP BY classificacao
+ORDER BY classificacao;
+```
 
 Use estes totais para conferir sua consulta. A unidade de análise é **a alteração**, mesmo quando um frete aparece mais de uma vez.
 
@@ -99,11 +160,13 @@ Use estes totais para conferir sua consulta. A unidade de análise é **a altera
 | --- | ---: |
 | Sem aprovação registrada | 420 |
 | Autoaprovação | 298 |
-| Aprovação após o pagamento | 249 |
-| Aprovação independente no prazo | 4.489 |
+| Aprovação fora da ordem exigida | 249 |
+| Conforme | 4.489 |
 | **Total no escopo** | **5.456** |
 
-A base inclui aumentos de R$ 499,99, R$ 500,00 e R$ 500,01 para testar a fronteira da regra. Aprovação ausente é um sinal para investigação. Em uma auditoria real, verifique a completude da extração e os registros do ERP antes de concluir que houve falha.
+As quatro categorias devem somar o mesmo total da contagem independente. Os 249 casos fora da ordem, nesta base, correspondem a aprovações posteriores ao pagamento. A consulta também sinaliza aprovações anteriores à alteração ou registradas no mesmo horário da alteração ou do pagamento.
+
+A base inclui aumentos de R$ 499,99, R$ 500,00 e R$ 500,01 para testar a fronteira da regra. Se a contagem divergir, confira se a junção com aprovações usa `LEFT JOIN` e se o limite é `> 50000`. Aprovação ausente é um sinal para investigação. Em uma auditoria real, verifique a completude da extração e os registros do ERP antes de concluir que houve falha.
 
 ## Próximas entregas
 
