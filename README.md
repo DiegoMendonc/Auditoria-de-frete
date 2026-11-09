@@ -164,6 +164,8 @@ Use estes totais para conferir sua consulta. A unidade de análise é **a altera
 | Conforme | 4.489 |
 | **Total no escopo** | **5.456** |
 
+**Validação em SQLite:** a consulta detalhada retornou 5.456 IDs de alteração distintos. As três categorias de exceção somaram 967 registros. Com os 4.489 conformes, o total reconciliado foi de 5.456, com diferença zero em relação à contagem independente.
+
 As quatro categorias devem somar o mesmo total da contagem independente. Os 249 casos fora da ordem, nesta base, correspondem a aprovações posteriores ao pagamento. A consulta também sinaliza aprovações anteriores à alteração ou registradas no mesmo horário da alteração ou do pagamento.
 
 A base inclui aumentos de R$ 499,99, R$ 500,00 e R$ 500,01 para testar a fronteira da regra. Se a contagem divergir, confira se a junção com aprovações usa `LEFT JOIN` e se o limite é `> 50000`. Aprovação ausente é um sinal para investigação. Em uma auditoria real, verifique a completude da extração e os registros do ERP antes de concluir que houve falha.
@@ -173,7 +175,7 @@ A base inclui aumentos de R$ 499,99, R$ 500,00 e R$ 500,01 para testar a frontei
 - [x] Definir o escopo, a regra e os cenários.
 - [x] Gerar a base fictícia em SQLite.
 - [x] Desenhar o modelo relacional e documentar as principais chaves.
-- [ ] Escrever consultas para identificar as exceções e reconciliar os totais.
+- [x] Escrever consultas para identificar as exceções e reconciliar os totais.
 - [ ] Comparar a taxa de exceções por filial usando como denominador as alterações no escopo de cada filial.
 - [ ] Investigar dois casos e registrar a evidência adicional que seria solicitada.
 - [ ] Publicar um resumo de auditoria e, se houver, uma captura do painel.
