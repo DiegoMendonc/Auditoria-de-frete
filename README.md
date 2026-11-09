@@ -170,12 +170,51 @@ As quatro categorias devem somar o mesmo total da contagem independente. Os 249 
 
 A base inclui aumentos de R$ 499,99, R$ 500,00 e R$ 500,01 para testar a fronteira da regra. Se a contagem divergir, confira se a junção com aprovações usa `LEFT JOIN` e se o limite é `> 50000`. Aprovação ausente é um sinal para investigação. Em uma auditoria real, verifique a completude da extração e os registros do ERP antes de concluir que houve falha.
 
+## Taxa de exceções por filial
+
+Cada alteração é atribuída à **filial do pedido**. O numerador conta as alterações classificadas como exceção. O denominador inclui todas as alterações no escopo da mesma filial, conformes ou com exceção.
+
+No bloco `WITH classificadas AS (...)` da seção anterior, acrescente `p.filial_id` ao `SELECT` e inclua `JOIN pedidos AS p ON p.id = f.pedido_id` logo após a junção com `fretes`. Substitua o `SELECT` final pelo trecho abaixo e execute a instrução completa no DBeaver.
+
+```sql
+SELECT
+    fi.nome AS filial,
+    COUNT(*) AS total_no_escopo,
+    SUM(CASE WHEN c.classificacao <> 'Conforme' THEN 1 ELSE 0 END)
+        AS total_excecoes,
+    ROUND(
+        100.0 * SUM(CASE WHEN c.classificacao <> 'Conforme' THEN 1 ELSE 0 END)
+        / COUNT(*),
+        2
+    ) AS taxa_excecoes_pct
+FROM classificadas AS c
+JOIN filiais AS fi ON fi.id = c.filial_id
+GROUP BY fi.id, fi.nome
+ORDER BY taxa_excecoes_pct DESC, fi.id;
+```
+
+### Resultados e achados da simulação
+
+| Filial | Alterações no escopo | Exceções | Taxa de exceções |
+| --- | ---: | ---: | ---: |
+| **Belo Horizonte** | **861** | **227** | **26,36%** |
+| Vitória | 861 | 187 | 21,72% |
+| Campinas | 862 | 177 | 20,53% |
+| Curitiba | 939 | 125 | 13,31% |
+| São Paulo | 992 | 130 | 13,10% |
+| Rio de Janeiro | 941 | 121 | 12,86% |
+| **Total geral** | **5.456** | **967** | **17,72%** |
+
+- **Belo Horizonte liderou em taxa e em volume de exceções.** Com o mesmo número de alterações no escopo que Vitória, registrou 40 exceções a mais. É o ponto de partida para detalhar os tipos de exceção e selecionar casos para investigação.
+- **Taxa e volume respondem a perguntas diferentes.** São Paulo teve mais exceções que Curitiba (130 contra 125), mas uma taxa menor (13,10% contra 13,31%) porque teve mais alterações no escopo.
+- **Os totais por filial foram reconciliados.** A soma das seis filiais bateu com a análise geral em população e exceções. A taxa geral usa `967 ÷ 5.456 × 100`, ponderando cada filial pelo seu volume de alterações.
+
 ## Próximas entregas
 
 - [x] Definir o escopo, a regra e os cenários.
 - [x] Gerar a base fictícia em SQLite.
 - [x] Desenhar o modelo relacional e documentar as principais chaves.
 - [x] Escrever consultas para identificar as exceções e reconciliar os totais.
-- [ ] Comparar a taxa de exceções por filial usando como denominador as alterações no escopo de cada filial.
+- [x] Comparar a taxa de exceções por filial usando como denominador as alterações no escopo de cada filial.
 - [ ] Investigar dois casos e registrar a evidência adicional que seria solicitada.
 - [ ] Publicar um resumo de auditoria e, se houver, uma captura do painel.
