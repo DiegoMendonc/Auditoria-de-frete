@@ -43,6 +43,54 @@ Pelo terminal, com o cliente SQLite instalado e aberto na pasta do projeto, use 
 | `alteracoes_frete` | 10.000 | Autor, valor anterior e novo, data e motivo |
 | `aprovacoes` | 5.669 | Alteração, aprovador e data |
 
+### Modelo relacional
+
+```mermaid
+erDiagram
+    filiais ||--o{ pedidos : recebe
+    filiais ||--o{ usuarios : vincula
+    pedidos ||--o| fretes : origina
+    transportadoras ||--o{ fretes : executa
+    fretes ||--o{ alteracoes_frete : registra
+    usuarios ||--o{ alteracoes_frete : realiza
+    alteracoes_frete ||--o| aprovacoes : recebe
+    usuarios ||--o{ aprovacoes : concede
+```
+
+A chave primária (`PRIMARY KEY`) identifica cada linha. A chave estrangeira (`REFERENCES`) aponta para outra tabela. A restrição `UNIQUE` limita a repetição de um valor ou de uma combinação de valores.
+
+| Chave | Papel no modelo |
+| --- | --- |
+| `fretes.pedido_id` → `pedidos.id` | Chave estrangeira com `UNIQUE`. Cada frete pertence a um pedido, e cada pedido pode ter até um frete. |
+| `alteracoes_frete.frete_id` → `fretes.id` | Chave estrangeira que pode se repetir. Um frete pode ter várias alterações, então o teste conta alterações. |
+| `aprovacoes.alteracao_id` → `alteracoes_frete.id` | Chave primária e estrangeira. Cada alteração pode ter até uma aprovação. |
+| `alteracoes_frete.alterado_por` e `aprovacoes.aprovado_por` → `usuarios.id` | Identificam quem alterou e quem aprovou. A comparação entre os dois campos permite detectar autoaprovação. |
+
+O diagrama representa as restrições do esquema. A carga fictícia gera um frete por pedido e até duas alterações por frete. O esquema também permite pedidos sem frete e mais de duas alterações por frete.
+
+### Conferir o esquema com acesso somente leitura
+
+No DBeaver, com acesso de leitura ao SQLite, consulte os metadados para ver as definições das tabelas sem percorrer os registros.
+
+```sql
+SELECT name AS tabela, sql AS definicao
+FROM sqlite_schema
+WHERE type = 'table'
+  AND name NOT GLOB 'sqlite_*'
+ORDER BY name;
+```
+
+A coluna `definicao` contém o `CREATE TABLE`. Se a grade truncar o texto, selecione a célula e abra o painel **Value** para ver a definição completa, incluindo `PRIMARY KEY` e `UNIQUE`.
+
+Para conferir apenas as chaves estrangeiras, execute uma instrução por vez.
+
+```sql
+PRAGMA foreign_key_list('alteracoes_frete');
+PRAGMA foreign_key_list('aprovacoes');
+```
+
+Na saída, `from` é a coluna de origem e `table` e `to` identificam a tabela e a coluna de destino. Se o acesso estiver limitado a telas, relatórios ou views que ocultam as restrições, marque as relações como inferidas e confirme-as com o dicionário de dados.
+
 ## Resultados de referência
 
 Use estes totais para conferir sua consulta. A unidade de análise é **a alteração**, mesmo quando um frete aparece mais de uma vez.
@@ -61,7 +109,7 @@ A base inclui aumentos de R$ 499,99, R$ 500,00 e R$ 500,01 para testar a frontei
 
 - [x] Definir o escopo, a regra e os cenários.
 - [x] Gerar a base fictícia em SQLite.
-- [ ] Desenhar o modelo relacional e documentar as principais chaves.
+- [x] Desenhar o modelo relacional e documentar as principais chaves.
 - [ ] Escrever consultas para identificar as exceções e reconciliar os totais.
 - [ ] Comparar a taxa de exceções por filial usando como denominador as alterações no escopo de cada filial.
 - [ ] Investigar dois casos e registrar a evidência adicional que seria solicitada.
