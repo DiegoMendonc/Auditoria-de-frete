@@ -256,7 +256,7 @@ As conclusões se limitam aos registros da base fictícia. As solicitações de 
 
 ## Relatório e conclusão da auditoria
 
-O [relatório em PDF](output/pdf/relatorio-auditoria-fretes.pdf) reúne o objetivo, o escopo, os critérios da NOR-LOG-001, os resultados dos testes, a investigação dos dois casos e as ações propostas. A estrutura segue como referência as [Normas Globais de Auditoria Interna do IIA](https://www.theiia.org/en/content/standards/complete-global-internal-audit-standards/), especialmente a Norma 15.1 sobre comunicação final dos resultados.
+O [relatório em PDF](Output/pdf/relatorio-auditoria-fretes.pdf) reúne o objetivo, o escopo, os critérios da NOR-LOG-001, os resultados dos testes, a investigação dos dois casos e as ações propostas. A estrutura segue como referência as [Normas Globais de Auditoria Interna do IIA](https://www.theiia.org/en/content/standards/complete-global-internal-audit-standards/), especialmente a Norma 15.1 sobre comunicação final dos resultados.
 
 ### Processo de elaboração
 
