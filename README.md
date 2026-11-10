@@ -209,6 +209,51 @@ ORDER BY taxa_excecoes_pct DESC, fi.id;
 - **Taxa e volume respondem a perguntas diferentes.** São Paulo teve mais exceções que Curitiba (130 contra 125), mas uma taxa menor (13,10% contra 13,31%) porque teve mais alterações no escopo.
 - **Os totais por filial foram reconciliados.** A soma das seis filiais bateu com a análise geral em população e exceções. A taxa geral usa `967 ÷ 5.456 × 100`, ponderando cada filial pelo seu volume de alterações.
 
+## Investigação de dois casos em Belo Horizonte
+
+Foram selecionadas duas alterações da filial com a maior taxa de exceções na simulação, uma sem aprovação registrada e outra com aprovação posterior ao pagamento. O critério é a [NOR-LOG-001](norma-interna-fretes.md). Cada aumento acima de R$ 500,00 exige aprovação por outra pessoa após a alteração e antes do pagamento.
+
+No DBeaver, mantenha o bloco `WITH classificadas AS (...)` da seção **Classificar as alterações** e substitua o `SELECT` final pelo trecho abaixo. Execute o bloco completo como uma instrução.
+
+```sql
+SELECT
+    alteracao_id,
+    frete_id,
+    aumento_centavos / 100.0 AS aumento_reais,
+    alterado_por,
+    aprovado_por,
+    alterado_em,
+    aprovado_em,
+    pago_em,
+    classificacao
+FROM classificadas
+WHERE alteracao_id IN (1742, 1862)
+ORDER BY alteracao_id;
+```
+
+| Evidência na base fictícia | Alteração 1742 | Alteração 1862 |
+| --- | --- | --- |
+| Frete | 174 | 186 |
+| Aumento | R$ 703,94 | R$ 707,66 |
+| Alteração | 07/03/2026 às 10h UTC, usuário 38 | 30/03/2026 às 10h UTC, usuário 31 |
+| Pagamento | 11/03/2026 às 8h UTC | 03/04/2026 às 8h UTC |
+| Aprovação | Sem registro vinculado | 04/04/2026 às 8h UTC, usuário 39 |
+| Classificação | Sem aprovação registrada | Aprovação fora da ordem exigida |
+
+### Alteração 1742 — ausência de aprovação na extração
+
+**Evidência adicional a solicitar.** Histórico completo de aprovações da alteração 1742 no ERP, com o identificador do aprovador e o horário do evento. Se houver aprovação no ERP, solicitar também o registro e os filtros da extração para investigar a divergência.
+
+**Conclusão preliminar.** O frete foi pago e a extração não contém evidência da aprovação exigida. A trilha completa do ERP permitiria verificar se a aprovação ocorreu antes do pagamento ou confirmar a ausência do registro na origem.
+
+### Alteração 1862 — aprovação posterior ao pagamento
+
+**Evidência adicional a solicitar.** Trilha de aprovação no ERP e comprovante de execução do pagamento, ambos com os horários efetivos. Se a sequência for confirmada, solicitar o registro de liberação do pagamento para identificar como ele avançou antes da aprovação.
+
+**Conclusão preliminar.** O aprovador é diferente do autor da alteração, mas a aprovação foi registrada 24 horas após o pagamento. A sequência observada contraria o prazo da norma. A confirmação depende dos registros de origem.
+
+As conclusões se limitam aos registros da base fictícia. As solicitações de evidência fazem parte da simulação.
+
 ## Próximas entregas
 
 - [x] Definir o escopo, a regra e os cenários.
@@ -216,5 +261,5 @@ ORDER BY taxa_excecoes_pct DESC, fi.id;
 - [x] Desenhar o modelo relacional e documentar as principais chaves.
 - [x] Escrever consultas para identificar as exceções e reconciliar os totais.
 - [x] Comparar a taxa de exceções por filial usando como denominador as alterações no escopo de cada filial.
-- [ ] Investigar dois casos e registrar a evidência adicional que seria solicitada.
+- [x] Investigar dois casos e registrar a evidência adicional que seria solicitada.
 - [ ] Publicar um resumo de auditoria e, se houver, uma captura do painel.
