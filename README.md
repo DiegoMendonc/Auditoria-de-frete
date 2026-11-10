@@ -1,6 +1,6 @@
 # Auditoria de alterações de frete
 
-**Status em construção** · Projeto de portfólio com dados fictícios gerados em SQLite.
+**Auditoria simulada concluída** · Projeto de portfólio com dados fictícios gerados em SQLite.
 
 ## Objetivo e escopo
 
@@ -254,7 +254,28 @@ ORDER BY alteracao_id;
 
 As conclusões se limitam aos registros da base fictícia. As solicitações de evidência fazem parte da simulação.
 
-## Próximas entregas
+## Relatório e conclusão da auditoria
+
+O [relatório em PDF](output/pdf/relatorio-auditoria-fretes.pdf) reúne o objetivo, o escopo, os critérios da NOR-LOG-001, os resultados dos testes, a investigação dos dois casos e as ações propostas. A estrutura segue como referência as [Normas Globais de Auditoria Interna do IIA](https://www.theiia.org/en/content/standards/complete-global-internal-audit-standards/), especialmente a Norma 15.1 sobre comunicação final dos resultados.
+
+### Processo de elaboração
+
+1. Delimitar a população de alterações em fretes pagos com aumento superior a R$ 500,00 e aplicar o critério de aprovação independente antes do pagamento.
+2. Classificar cada alteração em SQLite e reconciliar as contagens com a população inicial. Comparar a taxa de exceções usando o volume de alterações no escopo de cada filial.
+3. Selecionar dois casos de Belo Horizonte para detalhar a condição observada e registrar a evidência adicional que seria solicitada.
+4. Consolidar os resultados e as ações propostas no PDF e anexar o painel com os indicadores da simulação.
+
+### Conclusão
+
+O controle de aprovação prévia apresentou desvios na base fictícia. O teste sobre toda a população identificou **967 exceções em 5.456 alterações (17,72%)**. **Belo Horizonte** concentrou o maior volume e a maior taxa, com **227 exceções em 861 alterações (26,36%)**.
+
+Na alteração **1742**, a extração ficou sem aprovação vinculada. A confirmação dependeria do histórico de aprovações no ERP. Na alteração **1862**, a aprovação foi registrada **24 horas após o pagamento**. A confirmação da sequência dependeria da trilha do ERP e do comprovante de execução do pagamento. Os dois casos foram selecionados intencionalmente para detalhar as exceções. A taxa geral foi calculada sobre toda a população no escopo.
+
+O relatório propõe revisar primeiro os casos de Belo Horizonte, avaliar uma validação que impeça a liberação de pagamentos com aprovação pendente e repetir o teste após a implementação.
+
+![Painel da auditoria simulada com os indicadores gerais, as taxas por filial e os tipos de exceção](Evidências/painel-auditoria-fretes.png)
+
+## Checklist do projeto
 
 - [x] Definir o escopo, a regra e os cenários.
 - [x] Gerar a base fictícia em SQLite.
@@ -262,4 +283,4 @@ As conclusões se limitam aos registros da base fictícia. As solicitações de 
 - [x] Escrever consultas para identificar as exceções e reconciliar os totais.
 - [x] Comparar a taxa de exceções por filial usando como denominador as alterações no escopo de cada filial.
 - [x] Investigar dois casos e registrar a evidência adicional que seria solicitada.
-- [ ] Publicar um resumo de auditoria e, se houver, uma captura do painel.
+- [x] Registrar o resumo de auditoria, o relatório em PDF e o painel no README.
